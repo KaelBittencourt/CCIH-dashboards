@@ -72,6 +72,7 @@ import { exportCSV } from "./export";
 
 type Page = "home" | ModuleId | "quality" | "method" | "admin";
 type Theme = "light" | "dark" | "system";
+const themeStorageKey = "ccih-theme-v2";
 const months = Array.from({ length: 12 }, (_, i) =>
   new Date(2026, i, 1).toLocaleDateString("pt-BR", { month: "long" }),
 );
@@ -315,8 +316,11 @@ export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [mobile, setMobile] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("ccih-theme");
-    return saved === "light" || saved === "dark" ? saved : "system";
+    const saved = localStorage.getItem(themeStorageKey);
+    if (saved === "light" || saved === "dark" || saved === "system")
+      return saved;
+    const previous = localStorage.getItem("ccih-theme");
+    return previous === "light" || previous === "dark" ? previous : "light";
   });
   const [user, setUser] = useState<string | null>(null);
   const [role, setRole] = useState<"admin" | "reader">("reader");
@@ -337,7 +341,7 @@ export default function App() {
       (document.documentElement.dataset.theme =
         theme === "system" ? (media.matches ? "dark" : "light") : theme);
     apply();
-    localStorage.setItem("ccih-theme", theme);
+    localStorage.setItem(themeStorageKey, theme);
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
   }, [theme]);
@@ -1019,17 +1023,17 @@ function FilterBar({
         <span>Filtros</span>
       </div>
       {field(
-        "year",
-        "Ano",
-        years.map((v) => ({ value: v, label: v })),
-      )}
-      {field(
         "month",
         "Mês",
         months.map((m, i) => ({
           value: String(i + 1).padStart(2, "0"),
           label: m,
         })),
+      )}
+      {field(
+        "year",
+        "Ano",
+        years.map((v) => ({ value: v, label: v })),
       )}
       {field(
         "sector",
