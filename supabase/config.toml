@@ -1,0 +1,6 @@
+[auth]
+enable_signup = false
+
+[functions.portal]
+verify_jwt = false
+# A função valida o JWT com auth.getUser e verifica o perfil em cada requisição.

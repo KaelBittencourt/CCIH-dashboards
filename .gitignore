@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env*
+!.env.example
+.private/
+*.tsbuildinfo
+.local/
+outputs/
+src/preview-data.json
