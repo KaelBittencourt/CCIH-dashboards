@@ -76,6 +76,7 @@ Leitores usam **Recarregar painel** para consultar a base importada. Só adminis
 
 - `shared/domain.ts`: catálogo dos módulos, mapeamento de cabeçalhos, normalização, cubos agregados, filtros e cálculos. É compartilhado pelo importador e pela função de servidor.
 - `dashboard_snapshots()`: RPC autenticada retorna módulo, origem, atualização, última falha e distribuições por data/setor/turno. Não retorna responsáveis, e-mails, observações ou linhas originais.
+- `quality_issues(p_year,p_month,p_sector,p_shift,p_page)`: RPC autenticada e paginada (25 pendências por página) retorna somente módulo, linha, datas, campo e motivo da revisão. A tabela em Qualidade dos dados destaca datas inválidas, divergências e campos em branco, com link para a linha na fonte. Não avaliado permanece uma resposta válida.
 - `audit_responses`: leitura direta permitida apenas a administradores por RLS; paginação no detalhamento. `private_data.original` preserva cada campo recebido.
 - `portal` POST `{action:"sync"}` → `{results:[{module,ok,message}]}`; POST `{action:"invite",email,role:"reader"|"admin"}` → `{ok:true}`. Ambos exigem JWT válido e perfil administrador.
 - `replace_snapshot` e `record_sync_failure`: executáveis somente pela service role. Nunca chamá-los diretamente pelo frontend.

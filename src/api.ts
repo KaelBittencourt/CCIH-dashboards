@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import type { ModuleId, NormalizedRow, Snapshot } from "../shared/domain";
+import {
+  filterQualityIssues,
+  type Filters,
+  type QualityIssuePage,
+} from "../shared/domain";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anon =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -38,6 +43,37 @@ export async function loadTargets(): Promise<Targets> {
       .filter((r) => r.target !== null)
       .map((r) => [`${r.module}:${r.indicator}`, Number(r.target)]),
   );
+}
+export async function loadQualityIssues(
+  filters: Filters,
+  page: number,
+): Promise<QualityIssuePage> {
+  if (localPreview) {
+    const all = (await import("virtual:ccih-quality-issues")).default;
+    const items = filterQualityIssues(all, filters).sort(
+      (a, b) =>
+        a.module.localeCompare(b.module) ||
+        a.source_row - b.source_row ||
+        a.field_key.localeCompare(b.field_key),
+    );
+    return {
+      total: items.length,
+      items: items.slice((page - 1) * 25, page * 25),
+    };
+  }
+  if (!db) throw new Error("Integração Supabase pendente.");
+  const { data, error } = await db.rpc("quality_issues", {
+    p_year: filters.year || null,
+    p_month: filters.month || null,
+    p_sector: filters.sector || null,
+    p_shift: filters.shift || null,
+    p_page: page,
+  });
+  if (error)
+    throw new Error(
+      "Não foi possível carregar as linhas para revisão. Tente novamente.",
+    );
+  return data as QualityIssuePage;
 }
 export async function portalAction(body: Record<string, unknown>) {
   if (!db)

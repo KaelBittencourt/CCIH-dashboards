@@ -83,6 +83,9 @@ beforeAll(async () => {
       "utf8",
     ),
   );
+  await pg.exec(
+    readFileSync("supabase/migrations/202611110003_quality_issues.sql", "utf8"),
+  );
 }, 30000);
 afterAll(async () => {
   await pg?.close();
@@ -210,6 +213,31 @@ describe.sequential(
         ),
       ).rejects.toThrow();
     });
+    it("expõe apenas pendências sanitizadas a leitores e bloqueia anônimos", async () => {
+      await role("anon");
+      await expect(
+        pg.query("select public.quality_issues()"),
+      ).rejects.toThrow();
+      await role("authenticated", reader);
+      const { rows } = await pg.query<{ report: any }>(
+        "select public.quality_issues() report",
+      );
+      expect(rows[0].report.total).toBe(1);
+      expect(rows[0].report.items[0]).toMatchObject({
+        module: "cateter",
+        source_row: 3,
+        field_key: "audit_date",
+        issue_type: "invalid_date",
+        raw_value: "8/26/0026",
+      });
+      expect(JSON.stringify(rows)).not.toMatch(
+        /privado@|Observação restrita|Pessoa restrita|original|responsible/,
+      );
+      const period = await pg.query<{ report: any }>(
+        "select public.quality_issues('2026','01') report",
+      );
+      expect(period.rows[0].report.total).toBe(0);
+    });
     it("administrador consulta registros e define metas sem expô-los a leitores", async () => {
       await role("authenticated", admin);
       const { rows } = await pg.query<{ private_data: { email: string } }>(
@@ -249,6 +277,62 @@ describe.sequential(
       expect(
         rows[0].snapshots.find((s) => s.module === "cateter").error,
       ).toBeNull();
+    });
+    it("pagina pendências e respeita período, setor e turno sem confundir não avaliado com erro", async () => {
+      const base = fixture();
+      const rows = Array.from({ length: 30 }, (_, i) => ({
+        ...base[1],
+        source_row: i + 2,
+      }));
+      const valid = {
+        ...base[0],
+        source_row: 32,
+        audit_date: "2025-01-05",
+        date_issue: "Divergência de data",
+        answers: {
+          ...base[0].answers,
+          fluxo: "vazio" as const,
+          higiene: "nao_avaliado" as const,
+        },
+        original: { ...base[0].original, "Data da auditoria": "2025-01-05" },
+      };
+      await role("service_role");
+      await pg.query(
+        "select public.replace_snapshot('cateter',$1::jsonb,'excel')",
+        [JSON.stringify([...rows, valid])],
+      );
+      await role("authenticated", reader);
+      const first = (
+        await pg.query<{ report: any }>("select public.quality_issues() report")
+      ).rows[0].report;
+      expect(first.total).toBe(32);
+      expect(first.items).toHaveLength(25);
+      expect(first.items[0].source_row).toBe(2);
+      const second = (
+        await pg.query<{ report: any }>(
+          "select public.quality_issues(null,null,null,null,2) report",
+        )
+      ).rows[0].report;
+      expect(second.items).toHaveLength(7);
+      expect(second.items[0].source_row).toBe(27);
+      const period = (
+        await pg.query<{ report: any }>(
+          "select public.quality_issues('2025','01','Unidade de Internação','Manhã') report",
+        )
+      ).rows[0].report;
+      expect(period.total).toBe(2);
+      expect(period.items.map((i: any) => i.issue_type)).toEqual([
+        "date_discrepancy",
+        "blank_answer",
+      ]);
+      expect(period.items[0].raw_value).toBe("2025-01-05");
+      expect(
+        (
+          await pg.query<{ report: any }>(
+            "select public.quality_issues(null,null,'Outro setor') report",
+          )
+        ).rows[0].report.total,
+      ).toBe(0);
     });
   },
 );

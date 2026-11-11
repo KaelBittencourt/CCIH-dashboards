@@ -55,12 +55,14 @@ import {
   type Module,
   type ModuleId,
   type Snapshot,
+  type QualityIssuePage,
 } from "../shared/domain";
 import {
   db,
   loadDetails,
   loadSnapshots,
   loadTargets,
+  loadQualityIssues,
   localPreview,
   portalAction,
   type Detail,
@@ -1625,7 +1627,10 @@ function Quality({
                 </a>
               </div>
               <div className="quality-period-summary">
-                <span>{stats.total} respostas no recorte</span>
+                <span>
+                  {stats.total} {stats.total === 1 ? "resposta" : "respostas"}{" "}
+                  no recorte
+                </span>
                 <Badge>
                   {s?.origin === "excel"
                     ? "Excel"
@@ -1684,6 +1689,7 @@ function Quality({
           );
         })}
       </div>
+      <QualityIssueTable filters={filters} snapshots={sourceSnapshots} />
       <section className="panel prose">
         <h2>Como as pendências são tratadas</h2>
         <p>
@@ -1710,6 +1716,214 @@ function Quality({
         </p>
       </section>
     </>
+  );
+}
+
+function QualityIssueTable({
+  filters,
+  snapshots,
+}: {
+  filters: Filters;
+  snapshots: Snapshot[];
+}) {
+  const filterKey = JSON.stringify([
+    filters.year,
+    filters.month,
+    filters.sector,
+    filters.shift,
+  ]);
+  const [pagination, setPagination] = useState({ filterKey: "", page: 1 });
+  const page = pagination.filterKey === filterKey ? pagination.page : 1;
+  const [data, setData] = useState<QualityIssuePage | null>(null);
+  const [busy, setBusy] = useState(true);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let live = true;
+    setBusy(true);
+    setError("");
+    setData(null);
+    loadQualityIssues(filters, page)
+      .then((result) => {
+        if (!live) return;
+        const last = Math.max(1, Math.ceil(result.total / 25));
+        if (page > last) setPagination({ filterKey, page: last });
+        else setData(result);
+      })
+      .catch((e) => {
+        if (live)
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Não foi possível carregar as pendências.",
+          );
+      })
+      .finally(() => {
+        if (live) setBusy(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [
+    filters.year,
+    filters.month,
+    filters.sector,
+    filters.shift,
+    page,
+    retry,
+    snapshots,
+  ]);
+  const pages = Math.max(1, Math.ceil((data?.total ?? 0) / 25));
+  return (
+    <section
+      className="panel issue-panel"
+      aria-labelledby="quality-issues-title"
+    >
+      <div className="panel-heading">
+        <div>
+          <h2 id="quality-issues-title">Linhas para revisão</h2>
+          <p>
+            Datas inválidas, divergências de data e respostas em branco no
+            recorte selecionado.
+          </p>
+        </div>
+        <Badge tone="amber">
+          {data
+            ? `${data.total} ${data.total === 1 ? "pendência" : "pendências"}`
+            : "Revisão da fonte"}
+        </Badge>
+      </div>
+      <p className="issue-explainer">
+        Uma linha pode aparecer mais de uma vez quando há vários campos a
+        revisar. “Não avaliado” é uma resposta válida e não é listado como erro
+        de preenchimento.
+      </p>
+      {busy ? (
+        <p className="issue-status" role="status">
+          Carregando linhas…
+        </p>
+      ) : error ? (
+        <div className="notice warning" role="alert">
+          <p>{error}</p>
+          <button
+            className="text-button"
+            onClick={() => setRetry((n) => n + 1)}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : !data?.items.length ? (
+        <p className="issue-status">
+          Nenhuma pendência de preenchimento encontrada para estes filtros.
+        </p>
+      ) : (
+        <>
+          <div
+            className="issue-table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label="Tabela de linhas com pendências"
+          >
+            <table className="issue-table">
+              <thead>
+                <tr>
+                  <th scope="col">Planilha</th>
+                  <th scope="col">Linha</th>
+                  <th scope="col">Campo</th>
+                  <th scope="col">Valor informado</th>
+                  <th scope="col">Pendência</th>
+                  <th scope="col">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((i) => {
+                  const m = modules.find((m) => m.id === i.module)!;
+                  const field =
+                    i.field_key === "audit_date"
+                      ? "Data da auditoria"
+                      : (m.indicators.find((f) => f.id === i.field_key)
+                          ?.label ?? "Campo do formulário");
+                  const value =
+                    i.field_key === "audit_date" && i.audit_date
+                      ? niceDate(i.audit_date)
+                      : i.raw_value || "Em branco";
+                  return (
+                    <tr key={`${i.module}:${i.source_row}:${i.field_key}`}>
+                      <td>{m.title}</td>
+                      <td>
+                        <strong>{i.source_row}</strong>
+                      </td>
+                      <td>{field}</td>
+                      <td className="issue-value">{value}</td>
+                      <td>
+                        <Badge tone="amber">
+                          {i.issue_type === "invalid_date"
+                            ? "Data inválida"
+                            : i.issue_type === "date_discrepancy"
+                              ? "Conferir data"
+                              : "Resposta em branco"}
+                        </Badge>
+                        {i.field_key === "audit_date" && (
+                          <small>
+                            {i.issue_type === "date_discrepancy"
+                              ? "Mais de 30 dias entre auditoria e envio. "
+                              : ""}
+                            Envio:{" "}
+                            {i.reference_date
+                              ? niceDate(i.reference_date)
+                              : "Não informado"}
+                            .
+                          </small>
+                        )}
+                      </td>
+                      <td>
+                        <a
+                          className="text-button issue-row-link"
+                          href={`https://docs.google.com/spreadsheets/d/${m.sheetId}/edit#range=${i.source_row}:${i.source_row}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Revisar linha ${i.source_row} de ${m.title} no Google Sheets (nova aba)`}
+                        >
+                          Abrir linha
+                          <ExternalLink size={13} />
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="issue-pagination">
+            <span>
+              Página {page} de {pages} · {data.total}{" "}
+              {data.total === 1 ? "pendência" : "pendências"}
+            </span>
+            <div>
+              <button
+                className="secondary"
+                disabled={busy || page <= 1}
+                onClick={() => setPagination({ filterKey, page: page - 1 })}
+              >
+                Anterior
+              </button>
+              <button
+                className="secondary"
+                disabled={busy || page >= pages}
+                onClick={() => setPagination({ filterKey, page: page + 1 })}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      <p className="source-caption">
+        A numeração inclui o cabeçalho da planilha. O link destaca a linha
+        original; após a correção, sincronize a fonte para atualizar este
+        quadro.
+      </p>
+    </section>
   );
 }
 

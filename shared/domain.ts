@@ -462,3 +462,65 @@ export function previousMonth(year: string, month: string) {
     month: String(d.getUTCMonth() + 1).padStart(2, "0"),
   };
 }
+
+export type QualityIssue = {
+  module: ModuleId;
+  source_row: number;
+  audit_date: string | null;
+  sector: string;
+  shift: string;
+  field_key: string;
+  raw_value: string;
+  reference_date: string;
+  issue_type: "invalid_date" | "date_discrepancy" | "blank_answer";
+};
+export type QualityIssuePage = { total: number; items: QualityIssue[] };
+export function qualityIssuesFromRows(
+  module: Module,
+  rows: NormalizedRow[],
+): QualityIssue[] {
+  return rows.flatMap((row) => {
+    const base = {
+      module: module.id,
+      source_row: row.source_row,
+      audit_date: row.audit_date,
+      sector: row.sector,
+      shift: row.shift,
+      reference_date: row.submitted_at.slice(0, 10),
+    };
+    const issues: QualityIssue[] = [];
+    if (row.date_issue) {
+      const raw = Object.entries(row.original).find(
+        ([header]) => key(header) === key(module.dateHeader),
+      )?.[1];
+      issues.push({
+        ...base,
+        field_key: "audit_date",
+        raw_value: String(raw ?? "").slice(0, 80),
+        issue_type: row.audit_date ? "date_discrepancy" : "invalid_date",
+      });
+    }
+    for (const [field_key, status] of Object.entries(row.answers)) {
+      if (status === "vazio")
+        issues.push({
+          ...base,
+          field_key,
+          raw_value: "",
+          issue_type: "blank_answer",
+        });
+    }
+    return issues;
+  });
+}
+export function filterQualityIssues(
+  issues: QualityIssue[],
+  filters: Filters,
+): QualityIssue[] {
+  return issues.filter(
+    (i) =>
+      (!filters.year || i.audit_date?.slice(0, 4) === filters.year) &&
+      (!filters.month || i.audit_date?.slice(5, 7) === filters.month) &&
+      (!filters.sector || i.sector === filters.sector) &&
+      (!filters.shift || i.shift === filters.shift),
+  );
+}

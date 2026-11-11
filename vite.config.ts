@@ -14,10 +14,19 @@ export default defineConfig(({ command, mode }) => {
         name: "ccih-private-preview",
         resolveId(id) {
           if (id === "virtual:ccih-preview") return "\0virtual:ccih-preview";
+          if (id === "virtual:ccih-quality-issues")
+            return "\0virtual:ccih-quality-issues";
         },
         load(id) {
-          if (id !== "\0virtual:ccih-preview") return;
-          const path = ".private/preview-data.json";
+          if (
+            id !== "\0virtual:ccih-preview" &&
+            id !== "\0virtual:ccih-quality-issues"
+          )
+            return;
+          const path =
+            id === "\0virtual:ccih-quality-issues"
+              ? ".private/quality-issues.json"
+              : ".private/preview-data.json";
           const data =
             previewEnabled && existsSync(path)
               ? JSON.parse(readFileSync(path, "utf8"))
