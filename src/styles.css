@@ -2151,7 +2151,8 @@ select {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  min-width: 790px;
+  min-width: 1000px;
+  table-layout: fixed;
   font-size: 11px;
 }
 .issue-table th {
@@ -2160,29 +2161,47 @@ select {
   font-weight: 550;
   font-size: 9px;
   letter-spacing: 0.5px;
-  padding: 12px 18px;
+  padding: 12px 14px;
   border-block: 1px solid var(--border);
 }
-.issue-table td {
-  padding: 15px 18px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-  line-height: 1.7;
+.issue-col-source {
+  width: 15%;
 }
-.issue-table td:first-child {
-  min-width: 135px;
+.issue-col-row {
+  width: 5%;
+}
+.issue-col-field {
+  width: 17%;
+}
+.issue-col-value {
+  width: 13%;
+}
+.issue-col-status {
+  width: 14%;
+}
+.issue-col-details {
+  width: 24%;
+}
+.issue-col-action {
+  width: 12%;
+}
+.issue-table td {
+  height: 88px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  line-height: 1.5;
 }
 .issue-value {
   max-width: 190px;
   overflow-wrap: anywhere;
 }
-.issue-table td small {
-  display: block;
-  max-width: 235px;
+.issue-details {
   color: var(--muted);
-  line-height: 1.7;
-  font-size: 9px;
-  margin-top: 7px;
+  font-size: 10px;
+}
+.issue-details span {
+  display: block;
 }
 .issue-row-link {
   display: inline-flex;

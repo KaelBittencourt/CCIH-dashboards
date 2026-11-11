@@ -1829,6 +1829,15 @@ function QualityIssueTable({
             aria-label="Tabela de linhas com pendências"
           >
             <table className="issue-table">
+              <colgroup>
+                <col className="issue-col-source" />
+                <col className="issue-col-row" />
+                <col className="issue-col-field" />
+                <col className="issue-col-value" />
+                <col className="issue-col-status" />
+                <col className="issue-col-details" />
+                <col className="issue-col-action" />
+              </colgroup>
               <thead>
                 <tr>
                   <th scope="col">Planilha</th>
@@ -1836,6 +1845,7 @@ function QualityIssueTable({
                   <th scope="col">Campo</th>
                   <th scope="col">Valor informado</th>
                   <th scope="col">Pendência</th>
+                  <th scope="col">Detalhes</th>
                   <th scope="col">Ação</th>
                 </tr>
               </thead>
@@ -1867,17 +1877,26 @@ function QualityIssueTable({
                               ? "Conferir data"
                               : "Resposta em branco"}
                         </Badge>
+                      </td>
+                      <td className="issue-details">
                         {i.field_key === "audit_date" && (
-                          <small>
-                            {i.issue_type === "date_discrepancy"
-                              ? "Mais de 30 dias entre auditoria e envio. "
-                              : ""}
-                            Envio:{" "}
-                            {i.reference_date
-                              ? niceDate(i.reference_date)
-                              : "Não informado"}
-                            .
-                          </small>
+                          <div>
+                            {i.issue_type === "date_discrepancy" ? (
+                              <span>
+                                Mais de 30 dias entre auditoria e envio.
+                              </span>
+                            ) : null}
+                            <span>
+                              Envio:{" "}
+                              {i.reference_date
+                                ? niceDate(i.reference_date)
+                                : "Não informado"}
+                              .
+                            </span>
+                          </div>
+                        )}
+                        {i.field_key !== "audit_date" && (
+                          <span>Campo não preenchido.</span>
                         )}
                       </td>
                       <td>
