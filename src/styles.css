@@ -2106,6 +2106,39 @@ select {
 .dashboard-stats.six {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.sheet-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-decoration: none;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+.source-sheet-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  font-size: 10px;
+}
+.module-card-footer {
+  flex-wrap: wrap;
+}
+.quality-period-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: -3px 0 18px;
+  color: var(--muted);
+  font-size: 10px;
+}
+@media (max-width: 640px) {
+  .quality-grid .panel-heading {
+    flex-wrap: wrap;
+  }
+}
 @media (max-width: 900px) {
   .sidebar {
     visibility: hidden;

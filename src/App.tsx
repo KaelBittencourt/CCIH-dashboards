@@ -4,6 +4,7 @@ import {
   ArrowDownToLine,
   ArrowRight,
   ArrowUpRight,
+  ExternalLink,
   Check,
   ChevronRight,
   ClipboardCheck,
@@ -695,6 +696,8 @@ export default function App() {
               snapshots={snapshots}
               navigate={navigate}
               loading={loading}
+              filters={filters}
+              setFilters={setFilters}
             />
           )}
           {activeModule && (
@@ -706,7 +709,13 @@ export default function App() {
               targets={targets}
             />
           )}
-          {page === "quality" && <Quality snapshots={snapshots} />}
+          {page === "quality" && (
+            <Quality
+              snapshots={snapshots}
+              filters={filters}
+              setFilters={setFilters}
+            />
+          )}
           {page === "method" && <Methodology />}
           {page === "admin" && admin && (
             <Administration targets={targets} onChange={reload} />
@@ -726,14 +735,30 @@ export default function App() {
 }
 
 function Overview({
-  snapshots,
+  snapshots: sourceSnapshots,
   navigate,
   loading,
+  filters,
+  setFilters,
 }: {
   snapshots: Snapshot[];
   navigate: (p: Page) => void;
   loading: boolean;
+  filters: Filters;
+  setFilters: (f: Filters) => void;
 }) {
+  const snapshots = sourceSnapshots.map((s) => ({
+    ...s,
+    cubes: filterCubes(s.cubes, filters),
+  }));
+  const allCubes = sourceSnapshots.flatMap((s) => s.cubes);
+  const excludedDates =
+    filters.year || filters.month
+      ? filterCubes(allCubes, { ...filters, year: "", month: "" }).reduce(
+          (n, c) => n + c.invalid,
+          0,
+        )
+      : 0;
   const total = snapshots.reduce(
     (n, s) => n + s.cubes.reduce((a, c) => a + c.total, 0),
     0,
@@ -751,6 +776,14 @@ function Overview({
   ).size;
   return (
     <>
+      <FilterBar cubes={allCubes} filters={filters} setFilters={setFilters} />
+      {excludedDates > 0 && (
+        <div className="quality-note">
+          <TriangleAlert size={15} />
+          {excludedDates} respostas com data inválida ficam fora deste período.
+          Selecione “Todo o histórico” e “Todos os meses” para revisá-las.
+        </div>
+      )}
       <div className="overview-banner">
         <div>
           <Badge tone="mint">MONITORAMENTO ASSISTENCIAL</Badge>
@@ -774,7 +807,7 @@ function Overview({
         <Metric
           label="Respostas de auditoria"
           value={loading ? "…" : total}
-          detail="Nos dois módulos disponíveis"
+          detail="Nos dois módulos, conforme os filtros"
           icon={<ClipboardCheck size={18} />}
         />
         <Metric
@@ -863,8 +896,12 @@ function Overview({
               )}
               <p className="source-caption">
                 {stats.percent === null
-                  ? "Nenhuma base carregada."
-                  : `Índice ponderado por oportunidades avaliadas · ${series[0]?.period} a ${series.at(-1)?.period}`}
+                  ? s?.updated_at
+                    ? "Sem avaliações para os filtros selecionados."
+                    : "Nenhuma base carregada."
+                  : !series.length
+                    ? "Sem datas válidas para a evolução mensal."
+                    : `Índice ponderado por oportunidades avaliadas · ${series[0]?.period} a ${series.at(-1)?.period}`}
               </p>
               <div className="module-card-footer">
                 <span>
@@ -875,6 +912,16 @@ function Overview({
                       ? formatTime(s.updated_at)
                       : "Aguardando configuração"}
                 </span>
+                <a
+                  className="text-button source-sheet-link"
+                  href={`https://docs.google.com/spreadsheets/d/${m.sheetId}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Abrir planilha de ${m.title} no Google Sheets (nova aba)`}
+                >
+                  Planilha
+                  <ExternalLink size={13} />
+                </a>
                 <button onClick={() => navigate(m.id)}>
                   Explorar painel
                   <ArrowRight size={17} />
@@ -908,7 +955,8 @@ function Overview({
           <div>
             <h3>Qualidade dos dados</h3>
             <p>
-              {invalid} datas inválidas não entram nas análises por período.
+              {excludedDates || invalid} datas inválidas não entram nas análises
+              por período.
             </p>
             <span>
               Revisar pendências
@@ -1512,9 +1560,40 @@ function Indicators({
   );
 }
 
-function Quality({ snapshots }: { snapshots: Snapshot[] }) {
+function Quality({
+  snapshots: sourceSnapshots,
+  filters,
+  setFilters,
+}: {
+  snapshots: Snapshot[];
+  filters: Filters;
+  setFilters: (f: Filters) => void;
+}) {
+  const allCubes = sourceSnapshots.flatMap((s) => s.cubes);
+  const snapshots = sourceSnapshots.map((s) => ({
+    ...s,
+    cubes: filterCubes(s.cubes, filters),
+  }));
+  const excludedDates =
+    filters.year || filters.month
+      ? filterCubes(allCubes, { ...filters, year: "", month: "" }).reduce(
+          (n, c) => n + c.invalid,
+          0,
+        )
+      : 0;
   return (
     <>
+      <FilterBar cubes={allCubes} filters={filters} setFilters={setFilters} />
+      {excludedDates > 0 && (
+        <div className="notice warning">
+          <TriangleAlert size={18} />
+          <p>
+            {excludedDates} respostas com data inválida não podem ser atribuídas
+            a este período. Limpe os filtros de ano e mês para revisar essas
+            pendências no histórico completo.
+          </p>
+        </div>
+      )}
       <div className="quality-grid">
         {modules.map((m) => {
           const s = snapshots.find((s) => s.module === m.id);
@@ -1534,6 +1613,19 @@ function Quality({ snapshots }: { snapshots: Snapshot[] }) {
                   {moduleIcon(m.id)}
                   <h2>{m.title}</h2>
                 </div>
+                <a
+                  className="secondary sheet-link"
+                  href={`https://docs.google.com/spreadsheets/d/${m.sheetId}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Abrir planilha de ${m.title} no Google Sheets (nova aba)`}
+                >
+                  <ExternalLink size={14} />
+                  Abrir planilha
+                </a>
+              </div>
+              <div className="quality-period-summary">
+                <span>{stats.total} respostas no recorte</span>
                 <Badge>
                   {s?.origin === "excel"
                     ? "Excel"
@@ -1609,6 +1701,12 @@ function Quality({ snapshots }: { snapshots: Snapshot[] }) {
           detalhamento, revisa o registro no Google Sheets e executa uma nova
           sincronização. A versão anterior permanece disponível até a leitura e
           validação completas da nova base.
+        </p>
+        <p>
+          O botão “Abrir planilha” leva à fonte original no Google Sheets. A
+          permissão para editar é controlada pelo Google. Após corrigir,
+          solicite a um administrador a sincronização para atualizar os
+          indicadores.
         </p>
       </section>
     </>
