@@ -162,18 +162,6 @@ a {
   color: #a1b6ad;
   margin-top: 1px;
 }
-.workspace-tag {
-  border: 1px solid #ffffff14;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 12px;
-  font-size: 9px;
-  letter-spacing: 1.3px;
-  color: #a9c6b7;
-  margin-top: 31px;
-  border-radius: 5px;
-}
 .status-dot {
   width: 6px;
   height: 6px;
@@ -231,26 +219,6 @@ a {
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 36px;
-}
-.sidebar-note {
-  padding: 17px 12px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  border-bottom: 1px solid #ffffff12;
-  margin-bottom: 15px;
-}
-.sidebar-note > svg {
-  color: #81b397;
-}
-.sidebar-note p {
-  font-size: 10px;
-  line-height: 1.8;
-  color: #99b1a4;
-}
-.sidebar-note strong {
-  font-weight: 500;
-  color: #c3d7cb;
 }
 .user-box {
   display: flex;
@@ -477,6 +445,7 @@ main {
   color: var(--amber);
 }
 .overview-banner {
+  margin-top: 24px;
   background: #e8efe7;
   color: #263f31;
   border: 1px solid #dce7dc;

@@ -11,7 +11,6 @@ import {
   Database,
   FileText,
   Filter,
-  HeartPulse,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
@@ -489,9 +488,6 @@ export default function App() {
             CCIH<span>INTELIGÊNCIA ASSISTENCIAL</span>
           </div>
         </div>
-        <div className="workspace-tag">
-          <span className="status-dot" /> PORTAL DE AUDITORIAS
-        </div>
         <nav aria-label="Navegação principal">
           <span className="nav-heading">ACOMPANHAMENTO</span>
           <button
@@ -541,14 +537,6 @@ export default function App() {
           )}
         </nav>
         <div className="sidebar-bottom">
-          <div className="sidebar-note">
-            <HeartPulse size={20} />
-            <p>
-              Informação que apoia
-              <br />
-              <strong>um cuidado mais seguro.</strong>
-            </p>
-          </div>
           <div className="user-box">
             <div className="avatar">{preview ? "PV" : "CC"}</div>
             <div>
@@ -792,25 +780,6 @@ function Overview({
           Selecione “Todo o histórico” e “Todos os meses” para revisá-las.
         </div>
       )}
-      <div className="overview-banner">
-        <div>
-          <Badge tone="mint">MONITORAMENTO ASSISTENCIAL</Badge>
-          <h2>
-            Cada auditoria, uma oportunidade
-            <br />
-            de aprimorar o cuidado.
-          </h2>
-          <p>
-            Explore os painéis para acompanhar a adesão às práticas
-            <br className="desktop-break" /> e priorizar os pontos que precisam
-            de atenção.
-          </p>
-        </div>
-        <div className="banner-emblem" aria-hidden="true">
-          <ShieldCheck size={86} strokeWidth={1} />
-          <span>QUALIDADE & SEGURANÇA</span>
-        </div>
-      </div>
       <div className="overview-stats">
         <Metric
           label="Respostas de auditoria"
@@ -895,7 +864,7 @@ function Overview({
                         stroke="var(--accent)"
                         strokeWidth={2}
                         dot={false}
-                        connectNulls={false}
+                        connectNulls
                       />
                       <YAxis domain={[0, 100]} hide />
                     </LineChart>
@@ -972,6 +941,25 @@ function Overview({
             </span>
           </div>
         </button>
+      </div>
+      <div className="overview-banner">
+        <div>
+          <Badge tone="mint">MONITORAMENTO ASSISTENCIAL</Badge>
+          <h2>
+            Cada auditoria, uma oportunidade
+            <br />
+            de aprimorar o cuidado.
+          </h2>
+          <p>
+            Explore os painéis para acompanhar a adesão às práticas
+            <br className="desktop-break" /> e priorizar os pontos que precisam
+            de atenção.
+          </p>
+        </div>
+        <div className="banner-emblem" aria-hidden="true">
+          <ShieldCheck size={86} strokeWidth={1} />
+          <span>QUALIDADE & SEGURANÇA</span>
+        </div>
       </div>
     </>
   );
@@ -1337,7 +1325,7 @@ function Dashboard({
                       strokeWidth={2.5}
                       dot={{ r: 3, fill: "var(--surface)", strokeWidth: 2 }}
                       activeDot={{ r: 5 }}
-                      connectNulls={false}
+                      connectNulls
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -1345,7 +1333,8 @@ function Dashboard({
               <p className="source-caption">
                 Fonte: {module.title} · {trend[0]?.period ?? "—"} a{" "}
                 {trend.at(-1)?.period ?? "—"}. Eixo Y: conformidade (%). Meses
-                sem avaliações permanecem como lacunas.
+                sem avaliações são conectados visualmente entre os pontos
+                existentes, sem gerar valores para esses meses.
               </p>
             </section>
             <section className="panel">

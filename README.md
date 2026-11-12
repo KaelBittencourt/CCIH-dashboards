@@ -84,7 +84,7 @@ Leitores usam **Recarregar painel** para consultar a base importada. Só adminis
 - Índice: soma dos numeradores/soma dos denominadores dos itens elegíveis. Fixação adequada entra uma vez; presença de fixação permanece individual.
 - Volume em 2/3, profissional exclusivo EPC e lixeira reciclável: pendentes, sem pontuação. Instalação SVD: descritiva. Alterações nas regras exigem validação da CCIH e revisão do catálogo; a tela de metas não altera classificação.
 - Datas inválidas: incluídas no histórico sem filtro de mês/ano, excluídas dos recortes temporais. Divergência superior a 30 dias é sinalizada sem substituir a data declarada.
-- Metas opcionais definidas pela equipe; nenhum limite clínico é presumido. Comparação mensal em pontos percentuais, com tamanho das amostras. Meses ausentes são lacunas.
+- Metas opcionais definidas pela equipe; nenhum limite clínico é presumido. Comparação mensal em pontos percentuais, com tamanho das amostras. Meses ausentes continuam sem percentual calculado; a linha conecta visualmente os pontos existentes, sem imputar valores.
 - Responsáveis não são auditores. Nomes não são mesclados por aproximação; qualquer equivalência deve ser confirmada pela equipe e implementada explicitamente.
 
 ## Testar e publicar
