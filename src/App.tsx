@@ -56,6 +56,8 @@ import {
   type ModuleId,
   type Snapshot,
   type QualityIssuePage,
+  type Counts,
+  type Status,
 } from "../shared/domain";
 import {
   db,
@@ -1443,6 +1445,78 @@ function Dashboard({
   );
 }
 
+function responseLabel(status: Status, unscored: boolean) {
+  if (unscored && status === "conforme") return "Sim / conforme (original)";
+  if (unscored && status === "nao_conforme")
+    return "Não / não conforme (original)";
+  return statusLabels[status];
+}
+
+function responseColor(status: Status, unscored: boolean) {
+  if (unscored && status === "conforme") return "var(--status-descritivo)";
+  if (unscored && status === "nao_conforme") return "var(--muted)";
+  return `var(--status-${status})`;
+}
+
+function ResponseComposition({
+  counts,
+  denominator,
+  unscored,
+  full = false,
+  target,
+  label,
+}: {
+  counts: Counts;
+  denominator: number;
+  unscored: boolean;
+  full?: boolean;
+  target?: number;
+  label: string;
+}) {
+  const categories: Status[] =
+    full || unscored ? statuses : ["conforme", "nao_conforme", "parcial"];
+  const description = denominator
+    ? categories
+        .filter((s) => counts[s] > 0)
+        .map(
+          (s) =>
+            `${responseLabel(s, unscored)}: ${counts[s]} (${percent(ratio(counts[s], denominator))})`,
+        )
+        .join("; ")
+    : "Sem avaliação";
+  return (
+    <span
+      className={`response-composition ${full ? "large" : ""} ${denominator ? "" : "is-empty"}`}
+      role="img"
+      aria-label={`${label}. ${description}${target !== undefined && denominator ? `. Meta definida pela CCIH: ${target}%` : ""}`}
+    >
+      {denominator > 0 &&
+        categories
+          .filter((s) => counts[s] > 0)
+          .map((s) => (
+            <span
+              className="response-segment"
+              key={s}
+              style={{
+                width: `${ratio(counts[s], denominator)}%`,
+                background: responseColor(s, unscored),
+              }}
+              title={`${responseLabel(s, unscored)}: ${counts[s]} · ${percent(ratio(counts[s], denominator))}`}
+              aria-hidden="true"
+            />
+          ))}
+      {target !== undefined && denominator > 0 && (
+        <span
+          className="response-target"
+          style={{ left: `${target}%` }}
+          aria-hidden="true"
+          title={`Meta CCIH: ${target}%`}
+        />
+      )}
+    </span>
+  );
+}
+
 function Indicators({
   module,
   cubes,
@@ -1458,10 +1532,31 @@ function Indicators({
         <div>
           <h2>Indicadores em detalhe</h2>
           <p>
-            Abra um item para conferir a distribuição completa das respostas.
+            Compare as barras de conformidade e abra um item para explorar suas
+            respostas.
           </p>
         </div>
       </div>
+      <div
+        className="indicator-reading-key"
+        aria-label="Legenda das barras de conformidade"
+      >
+        {(["conforme", "nao_conforme", "parcial"] as Status[]).map((s) => (
+          <span key={s}>
+            <span style={{ background: responseColor(s, false) }} />
+            {statusLabels[s]}
+          </span>
+        ))}
+        <span>
+          <span className="empty-key" />
+          Sem avaliação
+        </span>
+      </div>
+      <p className="indicator-visual-note">
+        Barras de conformidade consideram apenas respostas avaliadas. Itens
+        pendentes e descritivos mostram a distribuição original em cores
+        neutras, sem pontuação.
+      </p>
       <div className="indicator-table">
         <div className="indicator-head">
           <span>INDICADOR</span>
@@ -1474,6 +1569,8 @@ function Indicators({
           const n = evaluated(c);
           const p = ratio(c.conforme, n);
           const target = targets[`${module.id}:${i.id}`];
+          const total = statuses.reduce((sum, s) => sum + c[s], 0);
+          const unscored = !!i.mode;
           return (
             <details className="indicator-row" key={i.id}>
               <summary>
@@ -1487,6 +1584,13 @@ function Indicators({
                     : i.mode === "description"
                       ? "Descritivo"
                       : percent(p)}
+                  <ResponseComposition
+                    counts={c}
+                    denominator={unscored ? total : n}
+                    unscored={unscored}
+                    target={!unscored && i.eligible ? target : undefined}
+                    label={`${i.label}: ${unscored ? "distribuição original" : "composição das avaliações"}`}
+                  />
                 </span>
                 <span>{i.mode ? "—" : `${c.conforme}/${n}`}</span>
                 <span>
@@ -1517,25 +1621,41 @@ function Indicators({
                     Parcialmente conforme permanece no denominador.
                   </p>
                 )}
-                <div className="distribution">
+                <div className="indicator-composition-heading">
+                  <strong>Distribuição de todas as respostas</strong>
+                  <span>
+                    {total} {total === 1 ? "resposta" : "respostas"}
+                  </span>
+                </div>
+                <ResponseComposition
+                  counts={c}
+                  denominator={total}
+                  unscored={unscored}
+                  full
+                  label={`Todas as respostas de ${i.label}`}
+                />
+                <div
+                  className="indicator-distribution-chart"
+                  aria-label={`Distribuição por categoria de ${i.label}`}
+                >
                   {statuses.map((s) => (
-                    <div key={s}>
-                      <span style={{ background: `var(--status-${s})` }} />
-                      <span>
-                        {i.mode && s === "conforme"
-                          ? "Sim / conforme (original)"
-                          : i.mode && s === "nao_conforme"
-                            ? "Não / não conforme (original)"
-                            : statusLabels[s]}
+                    <div key={s} className={c[s] ? "" : "is-zero"}>
+                      <span className="category-label">
+                        <span
+                          style={{ background: responseColor(s, unscored) }}
+                        />
+                        {responseLabel(s, unscored)}
+                      </span>
+                      <span className="category-track" aria-hidden="true">
+                        <span
+                          style={{
+                            width: `${ratio(c[s], total) ?? 0}%`,
+                            background: responseColor(s, unscored),
+                          }}
+                        />
                       </span>
                       <strong>
-                        {c[s]} ·{" "}
-                        {percent(
-                          ratio(
-                            c[s],
-                            statuses.reduce((n, k) => n + c[k], 0),
-                          ),
-                        )}
+                        {c[s]} · {percent(ratio(c[s], total))}
                       </strong>
                     </div>
                   ))}
