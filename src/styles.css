@@ -625,10 +625,8 @@ main {
 }
 .module-conformity-count {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 5px;
-  white-space: nowrap;
+  flex-direction: column;
+  gap: 3px;
 }
 .module-conformity-count b {
   font-size: 16px;

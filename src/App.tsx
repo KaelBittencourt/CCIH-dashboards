@@ -944,11 +944,11 @@ function Overview({
                   <span>respostas</span>
                 </div>
                 <div className="module-conformity">
-                  <strong>{percent(stats.percent)}</strong>
                   <div className="module-conformity-count">
                     <b>{stats.numerator} de {stats.denominator}</b>
                     <span>itens conformes</span>
                   </div>
+                  <strong>{percent(stats.percent)}</strong>
                 </div>
               </div>
               {series.length > 0 && (
