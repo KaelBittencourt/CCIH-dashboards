@@ -614,10 +614,42 @@ main {
   color: var(--accent);
 }
 .module-numbers span {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.5;
+  font-size: 9px;
+  color: var(--muted);
+}
+.module-numbers > .module-conformity {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.module-conformity-count {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.module-conformity-count b {
+  font-size: 16px;
+  font-weight: 650;
   color: var(--text);
+  white-space: nowrap;
+}
+.module-numbers .module-conformity-count span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+}
+@media (max-width: 600px) {
+  .module-numbers:has(.module-conformity) {
+    gap: 16px;
+  }
+  .module-numbers > .module-conformity {
+    padding-left: 16px;
+    gap: 10px;
+  }
+  .module-conformity-count b {
+    font-size: 14px;
+  }
 }
 .spark-chart {
   height: 170px;
@@ -1691,7 +1723,7 @@ select {
     font-size: 32px;
   }
   .module-numbers span {
-    font-size: 14px;
+    font-size: 11px;
   }
   .spark-chart {
     height: 190px;
@@ -1938,7 +1970,7 @@ select {
     font-size: 28px;
   }
   .module-numbers span {
-    font-size: 13px;
+    font-size: 10px;
   }
   .spark-chart {
     height: 160px;
