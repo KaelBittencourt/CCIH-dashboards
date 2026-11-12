@@ -614,8 +614,10 @@ main {
   color: var(--accent);
 }
 .module-numbers span {
-  font-size: 9px;
-  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
 }
 .spark-chart {
   height: 170px;
@@ -1689,7 +1691,7 @@ select {
     font-size: 32px;
   }
   .module-numbers span {
-    font-size: 11px;
+    font-size: 14px;
   }
   .spark-chart {
     height: 190px;
@@ -1936,7 +1938,7 @@ select {
     font-size: 28px;
   }
   .module-numbers span {
-    font-size: 10px;
+    font-size: 13px;
   }
   .spark-chart {
     height: 160px;
