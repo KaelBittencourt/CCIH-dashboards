@@ -618,9 +618,43 @@ main {
   color: var(--muted);
 }
 .spark-chart {
-  height: 60px;
+  height: 170px;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 8px;
+}
+.spark-trend {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.spark-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.spark-heading h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+.spark-heading span {
+  display: block;
+  font-size: 8px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.spark-latest {
+  text-align: right;
+  flex-shrink: 0;
+}
+.spark-latest strong {
+  font-family: Manrope, sans-serif;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.6px;
 }
 .source-caption {
   font-size: 9px;
@@ -1658,7 +1692,7 @@ select {
     font-size: 11px;
   }
   .spark-chart {
-    height: 85px;
+    height: 190px;
   }
   .sidebar nav button {
     font-size: 13px;
@@ -1905,7 +1939,7 @@ select {
     font-size: 10px;
   }
   .spark-chart {
-    height: 70px;
+    height: 160px;
   }
   .overview-bottom {
     grid-template-columns: 1fr;

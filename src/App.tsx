@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import {
   CartesianGrid,
+  Area,
+  AreaChart,
   Line,
   LineChart,
   Pie,
@@ -730,6 +732,104 @@ export default function App() {
   );
 }
 
+function OverviewTrend({
+  module,
+  series,
+}: {
+  module: Module;
+  series: ReturnType<typeof monthly>;
+}) {
+  const latest = series.filter((point) => point.percent !== null).at(-1);
+  if (!latest) return null;
+  return (
+    <div className="spark-trend">
+      <div className="spark-heading">
+        <div>
+          <h4>Conformidade mensal</h4>
+          <span>Itens conformes entre os avaliados</span>
+        </div>
+        <div className="spark-latest">
+          <strong>{percent(latest.percent)}</strong>
+          <span>Último mês · {latest.label}</span>
+        </div>
+      </div>
+      <div
+        className="spark-chart"
+        role="img"
+        aria-label={`Evolução mensal da conformidade de ${module.title}, de 0 a 100 por cento, entre ${series[0].period} e ${series.at(-1)!.period}`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={series}
+            margin={{ top: 14, right: 12, bottom: 8, left: 0 }}
+          >
+            <CartesianGrid
+              stroke="var(--border)"
+              strokeDasharray="3 5"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: "var(--muted)", fontSize: 9 }}
+              tickLine={false}
+              axisLine={false}
+              minTickGap={22}
+              interval="preserveStartEnd"
+              tickMargin={10}
+            />
+            <YAxis
+              domain={[0, 100]}
+              ticks={[0, 50, 100]}
+              tickFormatter={(v) => `${v}%`}
+              width={38}
+              tick={{ fill: "var(--muted)", fontSize: 9 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                const point = payload?.[0]?.payload;
+                return active && point && point.percent !== null ? (
+                  <div className="chart-tooltip">
+                    <strong>{point.label}</strong>
+                    <p>Conformidade: {percent(point.percent)}</p>
+                    <p>
+                      {point.numerator}/{point.denominator} oportunidades
+                      avaliadas
+                    </p>
+                    <p>
+                      {point.total}{" "}
+                      {point.total === 1 ? "resposta" : "respostas"} de
+                      auditoria
+                    </p>
+                  </div>
+                ) : null;
+              }}
+            />
+            <Area
+              dataKey="percent"
+              name="Conformidade (%)"
+              type="linear"
+              stroke="var(--accent)"
+              strokeWidth={2.5}
+              fill="var(--accent-soft)"
+              fillOpacity={1}
+              dot={{
+                r: 2.5,
+                fill: "var(--surface)",
+                stroke: "var(--accent)",
+                strokeWidth: 1.5,
+              }}
+              activeDot={{ r: 5, stroke: "var(--surface)", strokeWidth: 2 }}
+              connectNulls
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 function Overview({
   snapshots: sourceSnapshots,
   navigate,
@@ -851,25 +951,7 @@ function Overview({
                 </div>
               </div>
               {series.length > 0 && (
-                <div
-                  className="spark-chart"
-                  role="img"
-                  aria-label={`Evolução da conformidade de ${m.title}`}
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={series}>
-                      <Line
-                        dataKey="percent"
-                        type="linear"
-                        stroke="var(--accent)"
-                        strokeWidth={2}
-                        dot={false}
-                        connectNulls
-                      />
-                      <YAxis domain={[0, 100]} hide />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <OverviewTrend module={m} series={series} />
               )}
               <p className="source-caption">
                 {stats.percent === null
